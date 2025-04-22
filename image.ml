@@ -1,7 +1,7 @@
 (* 
                      Gray scale image processing
 
-See image.mli for more complete documentation.
+See `image.mli` for more complete documentation.
  *)
 
 module G = Graphics ;;
@@ -40,26 +40,24 @@ let rgb_of_gray (value : pixel) : G.color =
   Basic image functions -- creation, depiction, filtering
  *)
 
-(* create col_size row_size contents -- Create an `image` whose values
-   are in the range [0..1], with size given by `col_size` and
-   `row_size`, and content as provided in `contents`. 
- *)
-let create (col_size : int)
-           (row_size : int)
-           (contents : float list list)
-         : image =
-  {size = col_size, row_size;
+(* create contents -- Create an `image` whose values are in the range
+   [0..1], with content as provided in `contents`.  *)
+let create (contents : float list list) : image =
+  let row_count = List.length contents in
+  let col_count = List.length (List.hd contents) in
+  {size = row_count, col_count;
    content = contents} ;;
   
 (* depict img -- Presents `img` in an OCaml graphics window and waits
    for a short period to exit the window.
  *)
-let depict ({size = col_size, row_size; content} : image) : unit =
+let depict ({size = row_count, col_count; content} : image) : unit =
   try
     (* prepare the graphics canvas *)
     G.open_graph "";
     G.clear_graph ();
-    G.resize_window col_size row_size;
+    G.resize_window col_count row_count;
+    G.auto_synchronize false;
     
     (* draw each pixel *)
     content
@@ -72,8 +70,10 @@ let depict ({size = col_size, row_size; content} : image) : unit =
                    module coordinates starts at lower left, so need to
                    invert the row index *)
                 G.set_color (rgb_of_gray pixel);
-                G.plot col_index (row_size - row_index - 1)));
-    
+                G.plot col_index (row_count - row_index - 1)));
+    G.synchronize ();
+    G.auto_synchronize true;
+
     (* wait for a couple of seconds *)
     Unix.sleep 2
 

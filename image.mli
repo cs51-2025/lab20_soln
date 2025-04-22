@@ -13,13 +13,12 @@ This module provides for a set of operations on grayscale images, including
 
 type image ;;
 
-(* create col_size row_size contents -- Create an image whose pixel
-   values are floats in the range [0..1], with 0=white and
-   1=black. Size of the image is given by `col_size` and `row_size`,
-   and contents as a list of rows (from top to bottom), each a list of
-   column pixels (from left to right), whose values are floats in the
-   proper range. *)
-val create : int -> int -> float list list -> image ;;
+(* create contents -- Create an image whose pixel values are floats in
+   the range [0..1], with 0=white and 1=black, where contents is a
+   list of rows (from top to bottom), each a list of column pixels
+   (from left to right), whose values are floats in the proper
+   range. *)
+val create : float list list -> image ;;
   
 (* depict img -- Presents the `img` in an OCaml graphics window and
    waits for a few seconds before exiting the window. *)
