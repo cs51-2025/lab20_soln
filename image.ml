@@ -1,6 +1,9 @@
 (* 
               Gray scale image processing demonstration
 
+Alternative implementation using arrays rather than lists. To use,
+rename to `image.ml`.
+
 See `image.mli` for more complete documentation.
  *)
 
@@ -20,7 +23,7 @@ type size = int * int ;;
    to right) 
  *)
 type image = { size : size;
-               content : float list list } ;;
+               content : float array array } ;;
                
 (*....................................................................
   Utilities
@@ -38,16 +41,30 @@ let rgb_of_gray (value : pixel) : G.color =
     let level = int_of_float (float_of_int cMAXRGB *. (1. -. value)) in
     G.rgb level level level ;;
 
+(* init_matrix row_count col_count -- Returns a fresh matrix with
+   value at (row x, col y) given by `f x y`.
+ *)
+let init_matrix (row_count : int) (col_count : int) (f : int -> int -> 'a)
+    : 'a array array =
+  Array.init row_count (fun x -> Array.init col_count (fun y -> f x y))
+
 (*....................................................................
   Basic image functions -- creation, depiction, filtering
  *)
-
+               
 (* create contents -- Creates an `image` whose values are in the range
-   [0..1], with content as provided in `contents`.  *)
-let create (contents : float list list) : image =
-  let row_count = List.length contents in
-  let col_count = List.length (List.hd contents) in
-  {size = row_count, col_count; content = contents} ;;
+   [0..1], with size given by `col_count` and `row_count`, and content
+   as provided in `contents`.  *)
+let create (content : float list list) : image =
+  let row_count = List.length content in
+  let col_count = List.length (List.hd content) in
+  let created = Array.make_matrix row_count col_count 0. in
+  content
+  |> List.iteri (fun row_index row ->
+                 row
+                 |> List.iteri (fun col_index pixel ->
+                                created.(row_index).(col_index) <- pixel));
+  {size = row_count, col_count; content = created}
   
 (* depict img -- Presents `img` in an OCaml graphics window and waits
    for a short period to exit the window.
@@ -61,20 +78,15 @@ let depict ({size = row_count, col_count; content} : image) : unit =
     G.auto_synchronize false; (* disable automatic screen updates *)
     
     (* draw each pixel *)
-    content
-    |> List.iteri (* for each row in the image content *)
-         (fun row_index row ->
-          row
-          |> List.iteri (* for each pixel in the row *)
-               (fun col_index pixel ->
-                (* draw the pixel at the coordinates; note Graphics
-                   module coordinates starts at lower left, so need to
-                   invert the row index *)
-                G.set_color (rgb_of_gray pixel);
-                G.plot col_index (row_count - row_index - 1)));
+    for row = 0 to row_count - 1 do
+      for col = 0 to col_count - 1 do
+        G.set_color (rgb_of_gray content.(row).(col));
+        G.plot col (row_count - row - 1)
+      done
+    done;
     G.synchronize ();        (* update screen *)
     G.auto_synchronize true; (* reenable automatic screen updates *)
-
+    
     (* pause for a couple of seconds *)
     Unix.sleep 2
 
@@ -82,13 +94,15 @@ let depict ({size = row_count, col_count; content} : image) : unit =
     (* make sure to close window if things go wrong *)
     exn -> (G.close_graph (); raise exn) ;;
 
-(* filter f img -- Returns an image where each pixel is the
-   application of `f` to the corresponding pixel in `img`.
- *)
+(* filter f img -- Returns a fresh image where each pixel is the
+   application of `f` to the corresponding pixel in `img`.  *)
 let filter (f : pixel -> pixel)
-           ({content; _} as img : image)
+           ({size = row_count, col_count; content} as img : image)
          : image =
-  {img with content = List.map (List.map f) content} ;;
+  let new_content = init_matrix
+                      row_count col_count
+                      (fun row col -> f content.(row).(col)) in
+  {img with content = new_content} ;;
 
 (*....................................................................
   Various image transformations -- inversion, digital halftoning
@@ -123,4 +137,3 @@ let error_diffuse : image -> image =
               else
                 (error := !error -. (0. -. p);
                  0.)) ;;
-
