@@ -107,13 +107,18 @@ Unexplored alternatives and additions include:
   * Implementing the contents using arrays instead of lists. This
     would allow random access to the pixels, making it possible to
     efficiently implement more general image transformations like
-    convolutions or two-dimensional error diffusion. It would likely
-    lead to changes in implementation technique for some functions:
-    The `depict` function might change to use `for` loops. Decisions
-    would need to be made as to whether the image tranformation
-    functions would be destructive (changing the contents in place) or
-    functional (returning new copies), which would have impact on the
-    types of the functions.
+    convolutions or two-dimensional error diffusion.
+
+    We provide an example implementation in the file
+    `image_array.ml`. This implementation still satisfies the
+    `image.mli` signature, but uses arrays rather than lists for
+    storing the image contents. Care is taken not to mutate the
+    argument arrays in image processing functions, although an
+    implementation in terms of destructive operations on images would
+    be possible, but requiring changes to the signature.
+
+    To test this array version, simply rename it to `image.ml` and
+    recompile.
 
   * Addition of a thorough unit testing file.
  *)
