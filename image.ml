@@ -1,5 +1,5 @@
 (* 
-                     Gray scale image processing
+              Gray scale image processing demonstration
 
 See `image.mli` for more complete documentation.
  *)
@@ -10,7 +10,9 @@ let cMAXRGB = 255 ;;    (* maximum RGB channel value in Graphics module *)
 (* Pixels are floats in the range [0..1] where 0=white and 1=black. *)
 type pixel = float ;;
   
-(* Size is number of columns by number of rows *)
+(* Size is number of rows (y height) by number of columns (x width);
+   throughout, these widths are referred to as `row_count` and
+   `col_count`, respectively *)
 type size = int * int ;;
   
 (* Each `image` stores the size along with the contents, as a list of
@@ -40,13 +42,12 @@ let rgb_of_gray (value : pixel) : G.color =
   Basic image functions -- creation, depiction, filtering
  *)
 
-(* create contents -- Create an `image` whose values are in the range
+(* create contents -- Creates an `image` whose values are in the range
    [0..1], with content as provided in `contents`.  *)
 let create (contents : float list list) : image =
   let row_count = List.length contents in
   let col_count = List.length (List.hd contents) in
-  {size = row_count, col_count;
-   content = contents} ;;
+  {size = row_count, col_count; content = contents} ;;
   
 (* depict img -- Presents `img` in an OCaml graphics window and waits
    for a short period to exit the window.
@@ -57,7 +58,7 @@ let depict ({size = row_count, col_count; content} : image) : unit =
     G.open_graph "";
     G.clear_graph ();
     G.resize_window col_count row_count;
-    G.auto_synchronize false;
+    G.auto_synchronize false; (* disable automatic screen updates *)
     
     (* draw each pixel *)
     content
@@ -71,10 +72,10 @@ let depict ({size = row_count, col_count; content} : image) : unit =
                    invert the row index *)
                 G.set_color (rgb_of_gray pixel);
                 G.plot col_index (row_count - row_index - 1)));
-    G.synchronize ();
-    G.auto_synchronize true;
+    G.synchronize ();        (* update screen *)
+    G.auto_synchronize true; (* reenable automatic screen updates *)
 
-    (* wait for a couple of seconds *)
+    (* pause for a couple of seconds *)
     Unix.sleep 2
 
   with
@@ -102,14 +103,12 @@ let invert : image -> image =
    thresholding each pixel at the given `threshold`, interpreted as a
    fraction (between 0 and 1) of the value space.  *)
 let threshold (threshold : float) : image -> image =
-  filter
-    (fun p -> if threshold < p then 1. else 0.) ;;
+  filter (fun p -> if threshold < p then 1. else 0.) ;;
          
 (* dither img -- Digitally halftones `img` into a binary image by
    making a pixel black randomly in proportion to its gray level.  *)
 let dither : image -> image =
-  filter
-    (fun p -> if Random.float 1. < p then 1. else 0.) ;;
+  filter (fun p -> if Random.float 1. < p then 1. else 0.) ;;
 
 (* error_diffuse img -- Digitally halftones `img` into a binary image
    by one-dimensional error diffusion. Relies on the fact that
